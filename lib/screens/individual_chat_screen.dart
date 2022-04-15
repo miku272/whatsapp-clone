@@ -14,12 +14,35 @@ class IndividualChatScreen extends StatefulWidget {
 }
 
 class _IndividualChatScreenState extends State<IndividualChatScreen> {
+  bool showEmojiPicker = false;
+  FocusNode focusNode = FocusNode();
+  TextEditingController textEditingController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        showEmojiPicker = false;
+      }
+    });
+  }
+
   Widget selectEmoji() {
-    return Container();
+    return EmojiPicker(
+      onEmojiSelected: (category, emoji) {
+        setState(() {
+          textEditingController.text += emoji.emoji;
+        });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    var dynamicHeight = MediaQuery.of(context).size.height;
+    var dynamicWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.blueGrey,
       appBar: AppBar(
@@ -130,67 +153,100 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
           ),
         ],
       ),
-      body: Container(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        child: Stack(
-          children: [
-            ListView(),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Row(
-                children: [
-                  Container(
-                    width: MediaQuery.of(context).size.width - 45,
-                    child: Card(
-                      margin: const EdgeInsets.only(bottom: 8, right: 5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: TextFormField(
-                        textAlignVertical: TextAlignVertical.center,
-                        keyboardType: TextInputType.multiline,
-                        maxLines: 5,
-                        minLines: 1,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Message',
-                          contentPadding: const EdgeInsets.all(5),
-                          prefixIcon: IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.emoji_emotions),
-                          ),
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.attach_file),
+      body: SizedBox(
+        height: dynamicHeight,
+        width: dynamicWidth,
+        child: WillPopScope(
+          child: Stack(
+            children: [
+              ListView(),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: dynamicWidth - 45,
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 8, right: 5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: TextFormField(
+                              controller: textEditingController,
+                              focusNode: focusNode,
+                              textAlignVertical: TextAlignVertical.center,
+                              keyboardType: TextInputType.multiline,
+                              maxLines: 5,
+                              minLines: 1,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Message',
+                                contentPadding: const EdgeInsets.all(5),
+                                prefixIcon: IconButton(
+                                  onPressed: () {
+                                    focusNode.unfocus();
+                                    focusNode.canRequestFocus = false;
+                                    setState(() {
+                                      showEmojiPicker = !showEmojiPicker;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.emoji_emotions),
+                                ),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.attach_file),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.camera_alt),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.camera_alt),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: CircleAvatar(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.secondary,
+                            child: IconButton(
+                              onPressed: () {},
+                              icon: const Icon(Icons.mic),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.mic),
-                      ),
-                    ),
-                  ),
-                ],
+                    showEmojiPicker
+                        ? SizedBox(
+                            height: dynamicHeight * 0.35,
+                            child: selectEmoji(),
+                          )
+                        : Container(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          onWillPop: () {
+            if (showEmojiPicker) {
+              setState(() {
+                showEmojiPicker = false;
+              });
+            } else {
+              Navigator.pop(context);
+            }
+
+            return Future.value(false);
+          },
         ),
       ),
     );
